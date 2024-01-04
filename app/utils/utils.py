@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
-from app.crud import user_crud
+from app.services import user_services
 from app.models.user_model import UserModel
 from app.database.db import get_db
 
@@ -37,7 +37,7 @@ def invalidate_access_token(email: str, db: Session = Depends(get_db)):
     """
     Invalidate the access token for a user by adding it to the set of invalidated tokens.
     """
-    user = user_crud.get_user_by_email(db, email)
+    user = user_services.get_user_by_email(db, email)
     if user:
         token_data = {"sub": user.email}
         access_token = create_access_token(data=token_data)
@@ -45,7 +45,7 @@ def invalidate_access_token(email: str, db: Session = Depends(get_db)):
 
 
 def authenticate_user(db: Session, email: str, password: str) -> bool | UserModel:
-    user: UserModel = user_crud.get_user_by_email(db, email)
+    user: UserModel = user_services.get_user_by_email(db, email)
     if not user:
         return False
     if not verify_password(password, user.password):

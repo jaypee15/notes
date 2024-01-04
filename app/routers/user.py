@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from app.crud import user_crud
+from app.services import user_services
 from app.database.db import get_db
 from app.models.user_model import UserModel
 from app.schemas.token_schemas import TokenSchema
@@ -37,13 +37,13 @@ def get_users(db: Session = Depends(get_db)):
     """
     Returns a list of all users
     """
-    users = user_crud.get_all_users(db)
+    users = user_services.get_all_users(db)
     return list(users)
 
 @router.get(
     "/me", response_model=UserOutSchema, summary="get the currently logged in user"
 )
-def get_current_user(user_data: UserModel = Depends(user_crud.get_current_user)):
+def get_current_user(user_data: UserModel = Depends(user_services.get_current_user)):
     """
     This endpoints exposes the currently authenticated user
     """
@@ -57,12 +57,12 @@ def get_current_user(user_data: UserModel = Depends(user_crud.get_current_user))
 
 
 @router.get("/{email}", response_model=UserOutSchema, summary="Get user by email")
-def get_user(email: str, db: Session = Depends(get_db), current_user: UserModel=Depends(user_crud.get_current_user)):
+def get_user(email: str, db: Session = Depends(get_db), current_user: UserModel=Depends(user_services.get_current_user)):
     """ "
     Return a user by passing email as a URL parameter
     Returns a 404 if email does not exist in database
     """
-    user = user_crud.get_user_by_email(db, email)
+    user = user_services.get_user_by_email(db, email)
     if user:
         return user
     else:
@@ -78,13 +78,13 @@ def sign_up(user_data: UserCreateSchema, db: Session = Depends(get_db)):
     - **password**: strong password
 
     """
-    user = user_crud.get_user_by_email(db, user_data.email)
+    user = user_services.get_user_by_email(db, user_data.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="email exists",
         )
-    new_user = user_crud.add_user(db, user_data)
+    new_user = user_services.add_user(db, user_data)
 
     token_expires_date = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     # Generate an access token for the new user
@@ -133,7 +133,7 @@ def login_for_access_token(
 
 @router.post("/logout", summary="Logout and invalidate the access token")
 def logout(
-    current_user: UserModel = Depends(user_crud.get_current_user),
+    current_user: UserModel = Depends(user_services.get_current_user),
     db: Session = Depends(get_db),
 ):
     """
