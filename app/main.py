@@ -19,5 +19,7 @@ async def home(request: Request):
     return templates.TemplateResponse("home/index.html", {"request": request})
 
 
-
+@app.get("/app", response_class=HTMLResponse)
+async def main_app(request: Request):
+    return templates.TemplateResponse("home/app.html", {"request": request})
 
